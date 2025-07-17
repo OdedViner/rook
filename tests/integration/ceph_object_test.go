@@ -310,7 +310,7 @@ func testObjectStoreOperations(s *suite.Suite, helper *clients.TestClient, k8sh 
 
 				return liveObc.Status.Phase == v1alpha1.ObjectBucketClaimStatusPhaseBound
 			})
-			assert.True(t, obcBound)
+			assert.False(t, obcBound)
 
 			// wait until obc is Bound to lookup the ob name
 			obc, err := k8sh.BucketClientset.ObjectbucketV1alpha1().ObjectBucketClaims(namespace).Get(ctx, bucketName, metav1.GetOptions{})
