@@ -29,7 +29,7 @@ spec:
     # size appropriate for monitor data will be used.
     volumeClaimTemplate:
       spec:
-        storageClassName: gp2-csi
+        storageClassName: ibmc-vpc-block-10iops-tier
         resources:
           requests:
             storage: 10Gi
@@ -134,7 +134,7 @@ spec:
                 requests:
                   storage: 10Gi
               # IMPORTANT: Change the storage class depending on your environment
-              storageClassName: gp2-csi
+              storageClassName: ibmc-vpc-block-10iops-tier
               volumeMode: Block
               accessModes:
                 - ReadWriteOnce

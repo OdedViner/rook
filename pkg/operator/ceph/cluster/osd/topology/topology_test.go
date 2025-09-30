@@ -370,7 +370,47 @@ func TestCheckTopologyConflicts(t *testing.T) {
 		err := CheckTopologyConflicts(&nodes)
 		assert.NoError(t, err)
 	})
-
+	t.Run("invalid: rack1 reused across multiple zones", func(t *testing.T) {
+		nodes := []corev1.Node{
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "oviner30-rook-q4g82-worker-1-wbqdt",
+					Labels: map[string]string{
+						"kubernetes.io/hostname":        "oviner30-rook-q4g82-worker-1-wbqdt",
+						"topology.kubernetes.io/region": "us-south",
+						"topology.kubernetes.io/zone":   "us-south-1",
+						"topology.rook.io/rack":         "rack1",
+					},
+				},
+			},
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "oviner30-rook-q4g82-worker-2-97k69",
+					Labels: map[string]string{
+						"kubernetes.io/hostname":        "oviner30-rook-q4g82-worker-2-97k69",
+						"topology.kubernetes.io/region": "us-south",
+						"topology.kubernetes.io/zone":   "us-south-2",
+						"topology.rook.io/rack":         "rack1",
+					},
+				},
+			},
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "oviner30-rook-q4g82-worker-3-djdmz",
+					Labels: map[string]string{
+						"kubernetes.io/hostname":        "oviner30-rook-q4g82-worker-3-djdmz",
+						"topology.kubernetes.io/region": "us-south",
+						"topology.kubernetes.io/zone":   "us-south-3",
+						"topology.rook.io/rack":         "rack1",
+					},
+				},
+			},
+		}
+		err := CheckTopologyConflicts(&nodes)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "topology.rook.io/rack")
+		assert.Contains(t, err.Error(), "rack1")
+	})
 	t.Run("valid: only region labels used", func(t *testing.T) {
 		nodes := []corev1.Node{
 			node("node-a", map[string]string{"topology.kubernetes.io/region": "region1"}),
