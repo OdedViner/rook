@@ -424,6 +424,10 @@ func (c *ClusterController) reconcileCephCluster(clusterObj *cephv1.CephCluster,
 
 	// Set the spec
 	clustr.Spec = &clusterObj.Spec
+	// Update the mon Cluster's spec so health check timeouts reflect the current CR state
+	// if clustr.mons != nil {
+	// 	clustr.mons.UpdateSpec(clusterObj.Spec)
+	// }
 
 	c.clusterMap.Store(clustr.Namespace, clustr)
 	log.NamedInfo(clustr.namespacedName, logger, "reconciling ceph cluster")

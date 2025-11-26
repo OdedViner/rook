@@ -193,6 +193,18 @@ func (c *Cluster) MaxMonID() int {
 	return c.maxMonID
 }
 
+// UpdateSpec updates the cluster spec with the latest values from the CephCluster CR.
+// This ensures that health check timeouts and other spec-based configurations
+// reflect the current CR state.
+func (c *Cluster) UpdateSpec(spec cephv1.ClusterSpec) {
+	oldTimeout := c.spec.HealthCheck.DaemonHealth.Monitor.Timeout
+	newTimeout := spec.HealthCheck.DaemonHealth.Monitor.Timeout
+	c.spec = spec
+	if oldTimeout != newTimeout {
+		log.NamespacedInfo(c.Namespace, logger, "mon health check timeout updated from %q to %q", oldTimeout, newTimeout)
+	}
+}
+
 // Start begins the process of running a cluster of Ceph mons.
 func (c *Cluster) Start(clusterInfo *cephclient.ClusterInfo, rookImage string, cephVersion cephver.CephVersion, spec cephv1.ClusterSpec) (*cephclient.ClusterInfo, error) {
 	// Only one goroutine can orchestrate the mons at a time

@@ -57,28 +57,39 @@ type HealthChecker struct {
 }
 
 func updateMonTimeout(monCluster *Cluster) {
-	// If the env was passed by the operator config, use that value
-	// This is an old behavior where we maintain backward compatibility
-	monTimeoutEnv := os.Getenv("ROOK_MON_OUT_TIMEOUT")
-	if monTimeoutEnv != "" {
-		parsedInterval, err := time.ParseDuration(monTimeoutEnv)
-		// We ignore the error here since the default is 10min and it's unlikely to be a problem
-		if err == nil {
-			MonOutTimeout = parsedInterval
-		}
-		// No env var, let's use the CR value if any
-	} else {
-		monCRDTimeoutSetting := monCluster.spec.HealthCheck.DaemonHealth.Monitor.Timeout
-		if monCRDTimeoutSetting != "" {
-			if monTimeout, err := time.ParseDuration(monCRDTimeoutSetting); err == nil {
-				if monTimeout == timeZero {
-					log.NamespacedWarning(monCluster.Namespace, logger, "monitor failover is disabled")
-				}
-				MonOutTimeout = monTimeout
+	oldTimeout := MonOutTimeout
+	// Check CR spec first (preferred method)
+	monCRDTimeoutSetting := monCluster.spec.HealthCheck.DaemonHealth.Monitor.Timeout
+	if monCRDTimeoutSetting != "" {
+		log.NamespacedDebug(monCluster.Namespace, logger, "using mon timeout from CR spec: %q", monCRDTimeoutSetting)
+		if monTimeout, err := time.ParseDuration(monCRDTimeoutSetting); err == nil {
+			if monTimeout == timeZero {
+				log.NamespacedWarning(monCluster.Namespace, logger, "monitor failover is disabled")
 			}
+			MonOutTimeout = monTimeout
+		} else {
+			log.NamespacedWarning(monCluster.Namespace, logger, "failed to parse mon timeout from CR spec %q: %v, using default", monCRDTimeoutSetting, err)
+		}
+	} else {
+		// If CR spec is not set, check environment variable (backward compatibility)
+		monTimeoutEnv := os.Getenv("ROOK_MON_OUT_TIMEOUT")
+		if monTimeoutEnv != "" {
+			log.NamespacedDebug(monCluster.Namespace, logger, "ROOK_MON_OUT_TIMEOUT env var detected: %q", monTimeoutEnv)
+			parsedInterval, err := time.ParseDuration(monTimeoutEnv)
+			// We ignore the error here since the default is 10min and it's unlikely to be a problem
+			if err == nil {
+				MonOutTimeout = parsedInterval
+			} else {
+				log.NamespacedWarning(monCluster.Namespace, logger, "failed to parse ROOK_MON_OUT_TIMEOUT env var %q: %v, using default", monTimeoutEnv, err)
+			}
+		} else {
+			log.NamespacedDebug(monCluster.Namespace, logger, "no mon timeout configured, using default: %v", MonOutTimeout)
 		}
 	}
-	// A third case is when the CRD is not set, in which case we use the default from MonOutTimeout
+	// If neither CR spec nor env var is set, we use the default from MonOutTimeout
+	if oldTimeout != MonOutTimeout {
+		log.NamespacedInfo(monCluster.Namespace, logger, "mon failover timeout changed from %v to %v (%.0f minutes)", oldTimeout, MonOutTimeout, MonOutTimeout.Minutes())
+	}
 }
 
 func updateMonInterval(monCluster *Cluster, h *HealthChecker) {
