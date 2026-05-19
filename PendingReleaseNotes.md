@@ -17,3 +17,4 @@
 - Declare stable the feature to concurrently reconcile multiple Ceph Clusters with the setting `ROOK_RECONCILE_CONCURRENT_CLUSTERS`.
 - Containers within a pod are now consistently reconciled by name instead of relying on the order in which they are declared.  This is a defensive measure against the declaration order changing due to manipulation by a mutating webhook.
 - OSD resize with encrypted host-based OSDs: When using `encryptedDevice: true` with host-based (non-PVC) OSDs, resizing the underlying disk now automatically expands encrypted OSDs.
+- NetworkPolicy examples (experimental): Added example NetworkPolicy definitions for Rook-Ceph operator and operand pods to restrict egress/ingress traffic. See `deploy/examples/networkpolicy.yaml`.
